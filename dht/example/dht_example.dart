@@ -4,24 +4,20 @@
 import 'dart:io';
 import 'package:dht/dht.dart';
 
-main() {
+main() async {
   var dht22 = new DHT(DHT_Model.DHT22);
   while (true) {
     print('Reading...');
-    dht22.read(4)
-        .then((data) {
-      print('Received');
-      double humidity = data[0];
-      double temperature = data[1];
-      print('Humidity: ${humidity}, Temperature: ${temperature}');
-    })
-        .timeout(const Duration(seconds: 5), onTimeout: () {
+    List<double> values = await dht22.read(4).timeout(const Duration(seconds: 5));
+    if (values == null) {
       print('Timeout');
-    })
-        .catchError((error) {
-      print('Error: ${error}');
-    });
+    } else {
+      double humidity = values[0];
+      double temperature = values[1];
+      print('Humidity: ${humidity}, Temperature: ${temperature}');
+    }
     print('Sleeping...');
+    //await new Future.delayed(const Duration(seconds:7));
     sleep(const Duration(seconds:7));
   }
 }

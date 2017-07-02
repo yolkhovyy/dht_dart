@@ -38,11 +38,8 @@ class DHT {
       }
     };
 
-    var args = new List(3);
-    args[0] = model;
-    args[1] = pin;
-    args[2] = receivePort.sendPort;
     print('Sending model=${model} pin=${pin} sendPort=${receivePort.sendPort}');
+    var args = [model, pin, receivePort.sendPort];
     _getDHTServicePort.send(args);
 
     print('DHT.read returning');
