@@ -3,10 +3,8 @@
 
 #include <iostream>
 #include <cstring>
-
 #include "include/dart_api.h"
 #include "include/dart_native_api.h"
-
 #include "pi_2_dht_read.h"
 
 float* dht_read(int model, int pin) {
@@ -46,7 +44,6 @@ Dart_Handle HandleError(Dart_Handle handle) {
 }
 
 void DHTRead(Dart_Port dest_port_id, Dart_CObject* message) {
-    std::cout << "DHTRead enter" << std::endl;
     Dart_Port reply_port_id = ILLEGAL_PORT;
     if (message->type == Dart_CObject_kArray && message->value.as_array.length == 3) {
         // Read parameter objects
@@ -58,11 +55,8 @@ void DHTRead(Dart_Port dest_port_id, Dart_CObject* message) {
             int model = param0->value.as_int32;
             int pin = param1->value.as_int32;
             reply_port_id = param2->value.as_send_port.id;
-            std::cout << "DHTRead model=" << model << " pin=" << pin << " reply_port_id=" << reply_port_id << std::endl;
             float* values = dht_read(model, pin);
             if (values != NULL) {
-                std::cout << "humidity:" << values[0] << " temperature:" << values[1] << std::endl;
-
                 Dart_CObject result;
                 result.type = Dart_CObject_kArray;
                 result.value.as_array.length = 2;
@@ -77,8 +71,7 @@ void DHTRead(Dart_Port dest_port_id, Dart_CObject* message) {
                 value1->value.as_double = static_cast<double>(values[1]);
                 result.value.as_array.values[1] = value1;
 
-                bool res = Dart_PostCObject(reply_port_id, &result);
-                std::cout << "Dart_PostCObject to=" << reply_port_id << " res=" << res << std::endl;
+                Dart_PostCObject(reply_port_id, &result);
 
                 free(value1);
                 free(value0);
@@ -90,23 +83,19 @@ void DHTRead(Dart_Port dest_port_id, Dart_CObject* message) {
             }
         }
     }
-    std::cout << "DHTRead failed" << std::endl;
     Dart_CObject result;
     result.type = Dart_CObject_kNull;
     Dart_PostCObject(reply_port_id, &result);
 }
 
 void DHTReadServicePort(Dart_NativeArguments arguments) {
-    std::cout << "DHTReadServicePort 1" << std::endl;
     Dart_EnterScope();
     Dart_SetReturnValue(arguments, Dart_Null());
     Dart_Port service_port = Dart_NewNativePort("DHTReadService", DHTRead, true);
     if (service_port != ILLEGAL_PORT) {
-        std::cout << "DHTReadServicePort 2" << std::endl;
         Dart_Handle send_port = HandleError(Dart_NewSendPort(service_port));
         Dart_SetReturnValue(arguments, send_port);
     }
-    std::cout << "DHTReadServicePort 3" << std::endl;
     Dart_ExitScope();
 }
 

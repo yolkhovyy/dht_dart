@@ -22,27 +22,21 @@ class DHT {
   static SendPort _sendPort;
 
   Future<List<double>> read(int pin) {
-    print('DHT.read enter');
-
     Completer completer = new Completer();
 
     RawReceivePort receivePort = new RawReceivePort();
     receivePort.handler = (result) {
       receivePort.close();
-      print('handler result');
       if (result != null) {
-        print('Completing');
         completer.complete(result);
       } else {
         completer.completeError(new Exception("DHT data read failed"));
       }
     };
 
-    print('Sending model=${model} pin=${pin} sendPort=${receivePort.sendPort}');
     var args = [model, pin, receivePort.sendPort];
     _getDHTServicePort.send(args);
 
-    print('DHT.read returning');
     return completer.future;
   }
 
