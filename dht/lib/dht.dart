@@ -7,8 +7,6 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart-ext:dht_native';
 
-export 'src/dht_base.dart';
-
 enum DHT_Model { DHT11, DHT22, AM2302 }
 
 class DHT {
