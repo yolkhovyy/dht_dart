@@ -13,7 +13,7 @@ readDHT22() {
     double temperature = values[1];
     print('Humidity: ${humidity}, Temperature: ${temperature}');
   })
-  .timeout(const Duration(seconds: 5))
+  .timeout(const Duration(milliseconds:550))
   .catchError((e) => print(e));
 
   new Future.delayed(const Duration(seconds:5), readDHT22);
