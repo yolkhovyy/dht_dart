@@ -16,11 +16,12 @@ Your use of the DHT Dart/Native signifies acknowledgement of and agreement to th
 ## Content
 
 dht/ - Dart library
+
 dht_native/ - Native libraries
 
 ## Usage
 
-A simple usage example see in the dht/examples/ folder
+A simple usage example see in the dht/example/ folder
 
 ## Features and bugs
 

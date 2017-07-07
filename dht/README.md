@@ -7,7 +7,7 @@ Supported devices:
 
 ## Usage
 
-A simple usage example see in the examples/ folder
+A simple usage example see in the example/ folder
 
 ## Features and bugs
 
