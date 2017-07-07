@@ -1,9 +1,10 @@
 // Copyright (c) 2017, see the AUTHORS file. All rights reserved. Use of this source code
 // is governed by a BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'package:dht/dht.dart';
 
-main() {
+readDHT22() {
   var dht22 = new DHT(DHT_Model.DHT22);
   var future = dht22.read(4);
 
@@ -15,5 +16,9 @@ main() {
   .timeout(const Duration(seconds: 5))
   .catchError((e) => print(e));
 
-  print("Exiting");
+  new Future.delayed(const Duration(seconds:5), readDHT22);
+}
+
+main() {
+  new Future(() => readDHT22());
 }
