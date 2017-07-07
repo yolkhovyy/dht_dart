@@ -7,19 +7,26 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart-ext:dht_native';
 
-enum DHT_Model { DHT11, DHT22, AM2302 }
+enum DHT_Model { DHT22, AM2302 }
+enum RPI_Pin {
+  GPIO2, GPIO3, GPIO4, GPIO5, GPIO6, GPIO7, GPIO8, GPIO9,
+  GPIO10, GPIO11, GPIO12, GPIO13, GPIO14, GPIO15, GPIO16, GPIO17, GPIO18, GPIO19,
+  GPIO20, GPIO21, GPIO22, GPIO23, GPIO24, GPIO25, GPIO26, GPIO27
+}
 
 class DHT {
 
   int model;
+  int pin;
 
-  DHT(DHT_Model model) {
-    this.model = model == DHT_Model.DHT11 ? 11 : 22;
+  DHT(DHT_Model model, RPI_Pin pin) {
+    this.model = 22;
+    this.pin = pin.index + 2;
   }
 
   static SendPort _sendPort;
 
-  Future<List<double>> read(int pin) {
+  Future<List<double>> read() {
     Completer completer = new Completer();
 
     RawReceivePort receivePort = new RawReceivePort();

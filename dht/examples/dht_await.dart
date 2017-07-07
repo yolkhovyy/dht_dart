@@ -5,11 +5,11 @@ import 'dart:io';
 import 'package:dht/dht.dart';
 
 main() async {
-  var dht22 = new DHT(DHT_Model.DHT22);
+  var dht22 = new DHT(DHT_Model.DHT22, RPI_Pin.GPIO4);
   while (true) {
     try {
-      List<double> values = await dht22.read(4).timeout(
-          const Duration(seconds: 5));
+      List<double> values = await dht22.read().timeout(
+          const Duration(milliseconds:550));
       if (values == null) {
         print('Timeout');
       } else {
@@ -20,6 +20,6 @@ main() async {
     } catch(e) {
       print(e);
     }
-    sleep(const Duration(seconds:7));
+    sleep(const Duration(seconds:2));
   }
 }
