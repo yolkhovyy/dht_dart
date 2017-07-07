@@ -19,6 +19,12 @@ readDHT22() {
   new Future.delayed(const Duration(seconds:5), readDHT22);
 }
 
+otherActivity() {
+  print("Other activity");
+  new Future.delayed(const Duration(seconds:1), otherActivity);
+}
+
 main() {
   new Future(() => readDHT22());
+  new Future(otherActivity);
 }
