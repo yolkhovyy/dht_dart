@@ -26,7 +26,7 @@ class DHT {
 
   static SendPort _sendPort;
 
-  Future<List<double>> read() {
+  Future<List<num>> read() {
     Completer completer = new Completer();
 
     RawReceivePort receivePort = new RawReceivePort();
