@@ -8,14 +8,12 @@ main() async {
   var dht22 = new DHT(DHT_Model.DHT22, RPI_Pin.GPIO4);
   while (true) {
     try {
-      List<double> values = await dht22.read().timeout(
+      List<num> data = await dht22.read().timeout(
           const Duration(milliseconds:550));
-      if (values == null) {
+      if (data == null) {
         print('Timeout');
       } else {
-        double humidity = values[0];
-        double temperature = values[1];
-        print('Humidity: ${humidity}, Temperature: ${temperature}');
+        print('Timestamp: ${data[0]} Humidity: ${data[1]}, Temperature: ${data[2]}');
       }
     } catch(e) {
       print(e);
