@@ -2,6 +2,7 @@
 // is governed by a BSD-style license that can be found in the LICENSE file.
 
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <cstring>
 #include "include/dart_api.h"
@@ -11,8 +12,20 @@
 float* dht_read(int model, int pin) {
     float* values = nullptr;
     float humidity, temperature;
-    int r = pi_2_dht_read(model, pin, &humidity, &temperature);
-    if (r == 0) {
+    std::ifstream ifs_humidity("/sys/kernel/dht22/humidity", std::ifstream::in);
+    std::ifstream ifs_temperature("/sys/kernel/dht22/temperature", std::ifstream::in);
+    bool success = false;
+    if (!ifs_humidity.fail() && !ifs_temperature.fail()) {
+        ifs_humidity >> humidity;
+        ifs_humidity.close();
+        ifs_temperature >> temperature;
+        ifs_temperature.close();
+        success = true;
+    } else {
+        int r = pi_2_dht_read(model, pin, &humidity, &temperature);
+        success = r == 0;
+    }
+    if (success) {
         values = reinterpret_cast<float*>(malloc(2 * sizeof(float)));
         if (values != nullptr) {
             values[0] = humidity;
