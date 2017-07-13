@@ -1,0 +1,3 @@
+[submodule "third_party/DHT22-sensor-driver"]
+	path = third_party/DHT22-sensor-driver
+	url = https://github.com/Filkolev/DHT22-sensor-driver.git
