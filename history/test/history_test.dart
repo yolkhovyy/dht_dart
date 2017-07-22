@@ -9,101 +9,138 @@ import 'package:history/history.dart';
 void main() {
   group('History tests', () {
 
-  setUp(() {
+    setUp(() {
 
-    const int _TIMESTAMP_OFFSET = 0;
-    const int _TIMESTAMP_SIZE = 8;
-    const int _SENSOR_DATA_OFFSET = _TIMESTAMP_SIZE;
-    const int _SENSOR_DATA_SIZE = 16;
-    const int _CRC_OFFSET = _SENSOR_DATA_OFFSET + _SENSOR_DATA_SIZE;
-    const int _CRC_SIZE = 8;
-    const int _HISTORY_ENTRY_SIZE = _TIMESTAMP_SIZE + _SENSOR_DATA_SIZE + _CRC_SIZE;
+      const int _DATA_SIZE = 16;
+      const int _ENTRY_SIZE = History.TIMESTAMP_SIZE + _DATA_SIZE + History.CHECKSUM_SIZE;
+      const int _CHECKSUM_OFFSET = History.TIMESTAMP_SIZE + _DATA_SIZE;
 
-    // Empty history file
-    File file = new File("empty.bin");
-    RandomAccessFile raf = file.openSync(mode: FileMode.WRITE);
-    raf.close();
+      // Empty history file
+      File file = new File("empty.bin");
+      RandomAccessFile raf = file.openSync(mode: FileMode.WRITE);
+      raf.close();
 
-    ByteData data = new ByteData(_HISTORY_ENTRY_SIZE);
-    data.setUint64(_SENSOR_DATA_OFFSET, 0);
-    data.setUint64(_SENSOR_DATA_OFFSET + 8, 0);
+      ByteData data = new ByteData(_ENTRY_SIZE);
+      data.setUint64(History.DATA_OFFSET, 0);
+      data.setUint64(History.DATA_OFFSET + 8, 0);
 
-    // 2-entries history file, not wrapped
-    file = new File("2e.bin");
-    raf = file.openSync(mode: FileMode.WRITE);
-    for (int timestamp = 1; timestamp <= 2; timestamp++) {
-      data.setUint64(_TIMESTAMP_OFFSET, timestamp);
-      data.setUint64(_CRC_OFFSET, 0);
+      // 1-entry history file
+      file = new File("1e.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      data.setUint64(History.TIMESTAMP_OFFSET, 1);
+      data.setUint64(_CHECKSUM_OFFSET, 0);
+      data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
       raf.writeFromSync(data.buffer.asUint8List());
-    }
-    raf.close();
+      raf.close();
 
-    // 2-entries history file, wrappped
-    file = new File("2e-wrapped.bin");
-    raf = file.openSync(mode: FileMode.WRITE);
-    for (int timestamp = 2; timestamp > 0; timestamp--) {
-      data.setUint64(_TIMESTAMP_OFFSET, timestamp);
-      data.setUint64(_CRC_OFFSET, 0);
-      raf.writeFromSync(data.buffer.asUint8List());
-    }
-    raf.close();
+      // 2-entries history file, not wrapped
+      file = new File("2e.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      for (int timestamp = 1; timestamp <= 2; timestamp++) {
+        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(_CHECKSUM_OFFSET, 0);
+        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        raf.writeFromSync(data.buffer.asUint8List());
+      }
+      raf.close();
 
-    // 10-entries history file, not wrapped
-    file = new File("10e.bin");
-    raf = file.openSync(mode: FileMode.WRITE);
-    for (int timestamp = 1; timestamp <= 10; timestamp++) {
-      data.setUint64(_TIMESTAMP_OFFSET, timestamp);
-      data.setUint64(_CRC_OFFSET, 0);
-      raf.writeFromSync(data.buffer.asUint8List());
-    }
-    raf.close();
+      // 2-entries history file, wrappped
+      file = new File("2e-wrapped.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      for (int timestamp = 2; timestamp > 0; timestamp--) {
+        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(_CHECKSUM_OFFSET, 0);
+        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        raf.writeFromSync(data.buffer.asUint8List());
+      }
+      raf.close();
 
-    // 10-entries history file, wrapped
-    file = new File("10e-wrapped.bin");
-    raf = file.openSync(mode: FileMode.WRITE);
-    for (int timestamp = 1; timestamp < 10; timestamp++) {
-      data.setUint64(_TIMESTAMP_OFFSET, timestamp);
-      data.setUint64(_CRC_OFFSET, 0);
-      raf.writeFromSync(data.buffer.asUint8List());
-    }
-    raf.setPositionSync(0);
-    for (int timestamp = 10; timestamp < 15; timestamp++) {
-      data.setUint64(_TIMESTAMP_OFFSET, timestamp);
-      data.setUint64(_CRC_OFFSET, 0);
-      raf.writeFromSync(data.buffer.asUint8List());
-    }
-    raf.close();
+      // 10-entries history file, not wrapped
+      file = new File("10e.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      for (int timestamp = 1; timestamp <= 10; timestamp++) {
+        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(_CHECKSUM_OFFSET, 0);
+        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        raf.writeFromSync(data.buffer.asUint8List());
+      }
+      raf.close();
 
-  });
+      // 10-entries history file, wrapped
+      file = new File("10e-wrapped.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      for (int timestamp = 1; timestamp < 10; timestamp++) {
+        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(_CHECKSUM_OFFSET, 0);
+        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        raf.writeFromSync(data.buffer.asUint8List());
+      }
+      raf.setPositionSync(0);
+      for (int timestamp = 10; timestamp < 15; timestamp++) {
+        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(_CHECKSUM_OFFSET, 0);
+        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        raf.writeFromSync(data.buffer.asUint8List());
+      }
+      raf.close();
 
-  tearDown((){
-    File file;
-    file = new File("empty.bin");
-    file.deleteSync();
-    file = new File("2e.bin");
-    file.deleteSync();
-    file = new File("2e-wrapped.bin");
-    file.deleteSync();
-    file = new File("10e.bin");
-    file.deleteSync();
-    file = new File("10e-wrapped.bin");
-    file.deleteSync();      
-  });
+      // 10-entries history file, not wrapped, all timestamps the same
+      file = new File("10e-flat.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      for (int timestamp = 1; timestamp <= 10; timestamp++) {
+        data.setUint64(History.TIMESTAMP_OFFSET, 1);
+        data.setUint64(_CHECKSUM_OFFSET, 0);
+        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        raf.writeFromSync(data.buffer.asUint8List());
+      }
+      raf.close();
 
-    test('History.open Test', () {
+    });
+
+    tearDown(() {
+      File file;
+      file = new File("empty.bin");
+      file.deleteSync();
+      file = new File("1e.bin");
+      file.deleteSync();
+      file = new File("2e.bin");
+      file.deleteSync();
+      file = new File("2e-wrapped.bin");
+      file.deleteSync();
+      file = new File("10e.bin");
+      file.deleteSync();
+      file = new File("10e-wrapped.bin");
+      file.deleteSync();
+      file = new File("10e-flat.bin");
+      file.deleteSync();      
+    });
+
+    test('History.open() test', () {
       History history;
 
-      history = new History.open(fileName: "2e.bin", historyDataSize: 16);
-      expect(history.t_offset, equals(0));
-      
-      history = new History.open(fileName: "2e-wrapped.bin", historyDataSize: 16);
-      expect(history.t_offset, equals(32));
-      
-      history = new History.open(fileName: "10e.bin", historyDataSize: 16);
-      expect(history.t_offset, equals(0));
+      history = new History.open(fileName: "non-existing.bin", dataSize: 16);
+      expect(history.nextEntry, equals(0));
 
-      history = new History.open(fileName: "10e-wrapped.bin", historyDataSize: 16);
-      expect(history.t_offset, equals(160));
+      history = new History.open(fileName: "empty.bin", dataSize: 16);
+      expect(history.nextEntry, equals(0));
+      
+      history = new History.open(fileName: "1e.bin", dataSize: 16);
+      expect(history.nextEntry, equals(1));
+
+      history = new History.open(fileName: "2e.bin", dataSize: 16);
+      expect(history.nextEntry, equals(2));
+      
+      history = new History.open(fileName: "2e-wrapped.bin", dataSize: 16);
+      expect(history.nextEntry, equals(1));
+      
+      history = new History.open(fileName: "10e.bin", dataSize: 16);
+      expect(history.nextEntry, equals(10));
+
+      history = new History.open(fileName: "10e-wrapped.bin", dataSize: 16);
+      expect(history.nextEntry, equals(5));
+
+      history = new History.open(fileName: "10e-flat.bin", dataSize: 16);
+      expect(history.nextEntry, equals(1));
     });
   });
 }
