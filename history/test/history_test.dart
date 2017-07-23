@@ -12,8 +12,8 @@ void main() {
     setUp(() {
 
       const int _DATA_SIZE = 16;
-      const int _ENTRY_SIZE = History.TIMESTAMP_SIZE + _DATA_SIZE + History.CHECKSUM_SIZE;
-      const int _CHECKSUM_OFFSET = History.TIMESTAMP_SIZE + _DATA_SIZE;
+      const int _ENTRY_SIZE = HistoryEntry.TIMESTAMP_SIZE + _DATA_SIZE + HistoryEntry.CHECKSUM_SIZE;
+      const int _CHECKSUM_OFFSET = HistoryEntry.TIMESTAMP_SIZE + _DATA_SIZE;
 
       // Empty history file
       File file = new File("empty.bin");
@@ -21,15 +21,15 @@ void main() {
       raf.close();
 
       ByteData data = new ByteData(_ENTRY_SIZE);
-      data.setUint64(History.DATA_OFFSET, 0);
-      data.setUint64(History.DATA_OFFSET + 8, 0);
+      data.setUint64(HistoryEntry.DATA_OFFSET, 0);
+      data.setUint64(HistoryEntry.DATA_OFFSET + 8, 0);
 
       // 1-entry history file
       file = new File("1e.bin");
       raf = file.openSync(mode: FileMode.WRITE);
-      data.setUint64(History.TIMESTAMP_OFFSET, 1);
+      data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
       data.setUint64(_CHECKSUM_OFFSET, 0);
-      data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+      data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
       raf.writeFromSync(data.buffer.asUint8List());
       raf.close();
 
@@ -37,9 +37,9 @@ void main() {
       file = new File("2e.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       for (int timestamp = 1; timestamp <= 2; timestamp++) {
-        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, timestamp);
         data.setUint64(_CHECKSUM_OFFSET, 0);
-        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
         raf.writeFromSync(data.buffer.asUint8List());
       }
       raf.close();
@@ -48,9 +48,9 @@ void main() {
       file = new File("2e-wrapped.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       for (int timestamp = 2; timestamp > 0; timestamp--) {
-        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, timestamp);
         data.setUint64(_CHECKSUM_OFFSET, 0);
-        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
         raf.writeFromSync(data.buffer.asUint8List());
       }
       raf.close();
@@ -59,9 +59,9 @@ void main() {
       file = new File("10e.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       for (int timestamp = 1; timestamp <= 10; timestamp++) {
-        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, timestamp);
         data.setUint64(_CHECKSUM_OFFSET, 0);
-        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
         raf.writeFromSync(data.buffer.asUint8List());
       }
       raf.close();
@@ -70,16 +70,16 @@ void main() {
       file = new File("10e-wrapped.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       for (int timestamp = 1; timestamp < 10; timestamp++) {
-        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, timestamp);
         data.setUint64(_CHECKSUM_OFFSET, 0);
-        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
         raf.writeFromSync(data.buffer.asUint8List());
       }
       raf.setPositionSync(0);
       for (int timestamp = 10; timestamp < 15; timestamp++) {
-        data.setUint64(History.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, timestamp);
         data.setUint64(_CHECKSUM_OFFSET, 0);
-        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
         raf.writeFromSync(data.buffer.asUint8List());
       }
       raf.close();
@@ -88,9 +88,9 @@ void main() {
       file = new File("10e-flat.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       for (int timestamp = 1; timestamp <= 10; timestamp++) {
-        data.setUint64(History.TIMESTAMP_OFFSET, 1);
+        data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
         data.setUint64(_CHECKSUM_OFFSET, 0);
-        data.setUint64(_CHECKSUM_OFFSET, History.checksum(0, data.buffer.asUint8List()));
+        data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
         raf.writeFromSync(data.buffer.asUint8List());
       }
       raf.close();

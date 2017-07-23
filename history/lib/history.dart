@@ -11,12 +11,36 @@ import 'dart:io';
 
 export 'src/history_base.dart';
 
-class History {
+class HistoryEntry {
 
   static const int TIMESTAMP_OFFSET = 0;
   static const int TIMESTAMP_SIZE = 8;
   static const int DATA_OFFSET = TIMESTAMP_OFFSET + TIMESTAMP_SIZE;
   static const int CHECKSUM_SIZE = 8;
+
+  ByteData _byteData;
+  int timestamp;
+  Uint8List data;
+  int checksum;
+
+  HistoryEntry.fromByteData(ByteData byteData) {
+    _byteData = byteData;
+    timestamp = _byteData.getInt64(TIMESTAMP_OFFSET);
+    data = _byteData.buffer.asUint8List(DATA_OFFSET, _byteData.lengthInBytes - TIMESTAMP_SIZE - CHECKSUM_SIZE);
+    checksum = _byteData.getInt64(_byteData.lengthInBytes - CHECKSUM_SIZE);
+  }
+
+  bool get isValid => checksum == HistoryEntry.calculateChecksum(data: _byteData.buffer.asUint8List(0, _byteData.lengthInBytes - CHECKSUM_SIZE));
+
+  static calculateChecksum({int checksum = 0, Uint8List data}) {
+    for (var item in data) {
+      checksum += item;
+    }
+    return checksum;
+  }
+}
+
+class History {
 
   static const int _DEFAULT_HISTORY_SIZE = 16;
   static const int _DEFAULT_HISTORY_PAGE_SIZE = 4;
@@ -38,7 +62,7 @@ class History {
     this.historySize = historySize;
     this.dataSize = dataSize;
     this.pageSize = pageSize;
-    entrySize = TIMESTAMP_SIZE + this.dataSize + CHECKSUM_SIZE;
+    entrySize = HistoryEntry.TIMESTAMP_SIZE + this.dataSize + HistoryEntry.CHECKSUM_SIZE;
     
     // Find the oldest record to start overwrite from
     int lo = 0;
@@ -46,20 +70,22 @@ class History {
     nextEntry = 0;
     File file = new File(this.fileName);
     if (file.existsSync()) {
-      ByteData bd = new ByteData(8);
+      ByteData bd = new ByteData(entrySize);
       RandomAccessFile raf = file.openSync(mode: FileMode.READ);
       FileStat stat = file.statSync();
       numOfEntries = (stat.size / entrySize).floor();
       if (numOfEntries > 0) {
         raf.setPositionSync(0);
         raf.readIntoSync(bd.buffer.asUint8List());
-        int timestampMax = bd.getUint64(0);
+        HistoryEntry historyEntry = new HistoryEntry.fromByteData(bd);
+        int timestampMax = historyEntry.timestamp;
         int hi = numOfEntries;
         while (hi - lo > 1) {
           int next = lo + ((hi - lo) / 2).floor();
           raf.setPositionSync(next * entrySize);
           raf.readIntoSync(bd.buffer.asUint8List());
-          int timestamp = bd.getUint64(0);
+          historyEntry = new HistoryEntry.fromByteData(bd);
+          int timestamp = historyEntry.timestamp;
           if (timestamp > timestampMax) {
             timestampMax = timestamp;
             lo = next;
@@ -78,7 +104,7 @@ class History {
   store(int timestamp, Uint8List data) async {
     try {
 
-      ByteData dataTimestamp = new ByteData(TIMESTAMP_SIZE);
+      ByteData dataTimestamp = new ByteData(HistoryEntry.TIMESTAMP_SIZE);
       dataTimestamp.setUint64(0, timestamp);
 
       File file = new File(DEFAULT_HISTORY_FILE_NAME);
@@ -94,8 +120,8 @@ class History {
       // Data
       raf = await raf.writeFrom(data);
       // Checksum
-      int cs = History.checksum(0, dataTimestamp.buffer.asUint8List());
-      cs = History.checksum(cs, data);
+      int cs = HistoryEntry.calculateChecksum(data: dataTimestamp.buffer.asUint8List());
+      cs = HistoryEntry.calculateChecksum(checksum: cs, data: data);
       ByteData bd = new ByteData(8);
       bd.setUint64(0, cs);
       raf = await raf.writeFrom(bd.buffer.asUint8List());
@@ -108,13 +134,6 @@ class History {
     } catch (e) {
       print('History.store failed: $e');
     }
-  }
-
-  static checksum(int checksum, Uint8List data) {
-    for (var item in data) {
-      checksum += item;
-    }
-    return checksum;
   }
 
 }
