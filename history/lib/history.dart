@@ -24,6 +24,11 @@ class HistoryEntry {
   int checksum;
 
   HistoryEntry(int timestamp, ByteData dataBytes) {
+
+    if (dataBytes == null) {
+      throw new ArgumentError.notNull('dataBytes');
+    }
+
     this.timestamp;
     this.dataBytes = dataBytes;
     checksum = HistoryEntry.calculateChecksum(data: _entryBytes.buffer.asUint8List(0, _entryBytes.lengthInBytes - CHECKSUM_SIZE));
@@ -84,11 +89,10 @@ class History {
 
   int nextEntry;
 
-  History.open(
-      {String fileName = DEFAULT_HISTORY_FILE_NAME,
-      int dataSize = 0,
-      int historySize = _DEFAULT_HISTORY_SIZE,
-      int pageSize = _DEFAULT_HISTORY_PAGE_SIZE}) {
+  History.open({String fileName = DEFAULT_HISTORY_FILE_NAME,
+                int dataSize = 0,
+                int historySize = _DEFAULT_HISTORY_SIZE,
+                int pageSize = _DEFAULT_HISTORY_PAGE_SIZE}) {
 
     this.fileName = fileName;
     this.historySize = historySize;
@@ -96,58 +100,74 @@ class History {
     this.pageSize = pageSize;
     entrySize = HistoryEntry.TIMESTAMP_SIZE + this.dataSize + HistoryEntry.CHECKSUM_SIZE;
 
+    nextEntry = 0;
     HistoryEntry historyEntry;
     int lo = 0;
     int numOfEntries = 0;
-    nextEntry = 0;
+    int timestampMax = 0;
 
     File file = new File(this.fileName);
     if (file.existsSync()) {
+
       ByteData bytes = new ByteData(entrySize);
       RandomAccessFile raf = file.openSync(mode: FileMode.READ);
       FileStat stat = file.statSync();
 
       numOfEntries = (stat.size / entrySize).floor();
-      if (numOfEntries > 0) {
-        // Find 1st valid entry
-        int valid = 0;
-        do {
-          raf.setPositionSync(valid * entrySize);
-          raf.readIntoSync(bytes.buffer.asUint8List());
-          historyEntry = new HistoryEntry.parse(bytes);
-        } while (!historyEntry.isValid && ++valid < numOfEntries);
+      int hi = numOfEntries;
 
-        // Find the oldest entry
-        if (historyEntry.isValid) {
-          lo = valid;
-          int timestampMax = historyEntry.timestamp;
-          int hi = numOfEntries;
+      if (numOfEntries > 0) {
+        raf.setPositionSync(lo * entrySize);
+        raf.readIntoSync(bytes.buffer.asUint8List());
+
+        historyEntry = new HistoryEntry.parse(bytes);
+        if (!historyEntry.isValid) {
+          lo = _linearSearch(raf, timestampMax, lo, hi);
+          nextEntry = numOfEntries > 1 ? (++lo).remainder(this.historySize) : lo;
+        } else {
+          timestampMax = historyEntry.timestamp;
           while (hi - lo > 1) {
             int next = lo + ((hi - lo) / 2).floor();
             raf.setPositionSync(next * entrySize);
             raf.readIntoSync(bytes.buffer.asUint8List());
             historyEntry = new HistoryEntry.parse(bytes);
-            if (historyEntry.isValid) {
+            if (!historyEntry.isValid) {
+              lo = _linearSearch(raf, timestampMax, lo, hi);
+              nextEntry = lo;
+              break;
+             } else {
               int timestamp = historyEntry.timestamp;
               if (timestamp > timestampMax) {
                 timestampMax = timestamp;
                 lo = next;
               } else {
                 hi = next;
-              } 
-            } else {
-              // TODO: invalid entries
+              }            
             }
           }
+          nextEntry = (++lo).remainder(this.historySize);
         }
-
         raf.closeSync();
       }
     }
+  }
 
-    if (historyEntry != null && historyEntry.isValid && numOfEntries > 0) {
-      nextEntry = ++lo >= this.historySize ? 0 : lo;
+  int _linearSearch(RandomAccessFile raf, int timestampMax, int lo, int hi) {
+    int result = lo;
+    ByteData bytes = new ByteData(entrySize);
+    while (hi - lo > 1) {
+      lo++;
+      raf.setPositionSync(lo * entrySize);
+      raf.readIntoSync(bytes.buffer.asUint8List());
+      HistoryEntry historyEntry = new HistoryEntry.parse(bytes);
+      if (historyEntry.isValid) {
+        if (historyEntry.timestamp >= timestampMax) {
+          timestampMax = historyEntry.timestamp;
+          result = lo;
+        }
+      }
     }
+    return result;
   }
 
   store(int timestamp, Uint8List data) async {
