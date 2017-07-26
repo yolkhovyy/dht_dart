@@ -25,6 +25,15 @@ void main() {
       data.setUint64(HistoryEntry.DATA_OFFSET + 8, 0);
 
       // 1-entry history file
+      file = new File("1e-incomplete.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
+      data.setUint64(_CHECKSUM_OFFSET, 0);
+      data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
+      raf.writeFromSync(data.buffer.asUint8List(), 0, 29);
+      raf.close();
+
+      // 1-entry history file
       file = new File("1e.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
@@ -32,7 +41,7 @@ void main() {
       data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
       raf.writeFromSync(data.buffer.asUint8List());
       raf.close();
-
+      
       // 1-entry history file, invalid entry
       file = new File("1e-invalid.bin");
       raf = file.openSync(mode: FileMode.WRITE);
@@ -53,8 +62,21 @@ void main() {
       }
       raf.close();
 
+      // 2-entries history file, incomplete
+      file = new File("2e-incomplete.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
+      data.setUint64(_CHECKSUM_OFFSET, 0);
+      data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
+      raf.writeFromSync(data.buffer.asUint8List());
+      data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 2);
+      data.setUint64(_CHECKSUM_OFFSET, 0);
+      data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
+      raf.writeFromSync(data.buffer.asUint8List(), 0, 30);
+      raf.close();
+      
       // 2-entries history file, not wrapped, 1st inavlid
-      file = new File("2e-invalid-1.bin");
+      file = new File("2e-invalid-0.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
       data.setUint64(_CHECKSUM_OFFSET, 0);
@@ -67,7 +89,7 @@ void main() {
       raf.close();
 
       // 2-entries history file, not wrapped, 2nd inavlid
-      file = new File("2e-invalid-2.bin");
+      file = new File("2e-invalid-1.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
       data.setUint64(_CHECKSUM_OFFSET, 0);
@@ -101,6 +123,21 @@ void main() {
       }
       raf.close();
 
+      // 10-entries history file, incomplete
+      file = new File("10e-incomplete.bin");
+      raf = file.openSync(mode: FileMode.WRITE);
+      for (int timestamp = 1; timestamp < 10; timestamp++) {
+        data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, timestamp);
+        data.setUint64(_CHECKSUM_OFFSET, 0);
+        data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
+        raf.writeFromSync(data.buffer.asUint8List());
+      }
+      data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 10);
+      data.setUint64(_CHECKSUM_OFFSET, 0);
+      data.setUint64(_CHECKSUM_OFFSET, HistoryEntry.calculateChecksum(data: data.buffer.asUint8List()));
+      raf.writeFromSync(data.buffer.asUint8List(), 0, 27);
+      raf.close();
+      
       // 10-entries history file, wrapped
       file = new File("10e-wrapped.bin");
       raf = file.openSync(mode: FileMode.WRITE);
@@ -138,17 +175,23 @@ void main() {
       file.deleteSync();
       file = new File("1e.bin");
       file.deleteSync();
+      file = new File("1e-incomplete.bin");
+      file.deleteSync();
       file = new File("1e-invalid.bin");
       file.deleteSync();
       file = new File("2e.bin");
       file.deleteSync();
-      file = new File("2e-invalid-1.bin");
+      file = new File("2e-incomplete.bin");
       file.deleteSync();
-      file = new File("2e-invalid-2.bin");
+      file = new File("2e-invalid-0.bin");
+      file.deleteSync();
+      file = new File("2e-invalid-1.bin");
       file.deleteSync();
       file = new File("2e-wrapped.bin");
       file.deleteSync();
       file = new File("10e.bin");
+      file.deleteSync();
+      file = new File("10e-incomplete.bin");
       file.deleteSync();
       file = new File("10e-wrapped.bin");
       file.deleteSync();
@@ -168,23 +211,32 @@ void main() {
       history = new History.open(fileName: "1e.bin", dataSize: 16);
       expect(history.nextEntry, equals(1));
 
+      history = new History.open(fileName: "1e-incomplete.bin", dataSize: 16);
+      expect(history.nextEntry, equals(0));
+      
       history = new History.open(fileName: "1e-invalid.bin", dataSize: 16);
       expect(history.nextEntry, equals(0));
 
       history = new History.open(fileName: "2e.bin", dataSize: 16);
       expect(history.nextEntry, equals(2));
       
-      history = new History.open(fileName: "2e-invalid-1.bin", dataSize: 16);
+      history = new History.open(fileName: "2e-incomplete.bin", dataSize: 16);
+      expect(history.nextEntry, equals(1));
+
+      history = new History.open(fileName: "2e-invalid-0.bin", dataSize: 16);
       expect(history.nextEntry, equals(2));
       
-      // history = new History.open(fileName: "2e-invalid-2.bin", dataSize: 16);
-      // expect(history.nextEntry, equals(1));
+      history = new History.open(fileName: "2e-invalid-1.bin", dataSize: 16);
+      expect(history.nextEntry, equals(1));
 
       history = new History.open(fileName: "2e-wrapped.bin", dataSize: 16);
       expect(history.nextEntry, equals(1));
       
       history = new History.open(fileName: "10e.bin", dataSize: 16);
       expect(history.nextEntry, equals(10));
+
+      history = new History.open(fileName: "10e-incomplete.bin", dataSize: 16);
+      expect(history.nextEntry, equals(9));
 
       history = new History.open(fileName: "10e-wrapped.bin", dataSize: 16);
       expect(history.nextEntry, equals(5));
