@@ -9,6 +9,7 @@ library history;
 import 'dart:core';
 import 'dart:typed_data';
 import 'dart:io';
+import 'dart:async';
 
 export 'src/history_base.dart';
 
@@ -123,7 +124,7 @@ class History {
         historyEntry = new HistoryEntry.parse(bytes);
         if (!historyEntry.isValid) {
           lo = _linearSearch(raf, timestampMax, lo, hi);
-          nextEntry = numOfEntries > 1 ? (++lo).remainder(this.historySize) : lo;
+          nextEntry = numOfEntries > 1 && lo > 0 ? (++lo).remainder(this.historySize) : lo;
         } else {
           timestampMax = historyEntry.timestamp;
           while (hi - lo > 1) {
@@ -168,6 +169,43 @@ class History {
       }
     }
     return result;
+  }
+
+  Stream<List<HistoryEntry>> read(final int PAGE_SIZE) async* {
+
+    if (PAGE_SIZE == null) {
+      throw new ArgumentError.notNull('PAGE_SIZE');
+    } else if (PAGE_SIZE == 0) {
+      throw new ArgumentError("PAGE_SIZE must not be 0");
+    }
+
+    File file = new File(this.fileName);
+    if (file.existsSync()) {
+      ByteData bytes = new ByteData(entrySize);
+      RandomAccessFile raf = await file.open(mode: FileMode.READ);
+      FileStat stat = await file.stat();
+      final int NUM_OF_ENTRIES = (stat.size / entrySize).floor();
+      int numOfEntries = NUM_OF_ENTRIES;
+      int numOfPages = (NUM_OF_ENTRIES / PAGE_SIZE).ceil();
+      int next = nextEntry.remainder(NUM_OF_ENTRIES);
+      while (numOfPages-- > 0) {
+        int pageSize = PAGE_SIZE;
+        List<HistoryEntry> result = new List<HistoryEntry>();
+        while (pageSize > 0 && numOfEntries-- > 0) {
+          raf = await raf.setPosition(next * entrySize);
+          var r = await raf.readInto(bytes.buffer.asUint8List());
+          if (r == entrySize) {
+            HistoryEntry historyEntry = new HistoryEntry.parse(bytes);
+            if (historyEntry.isValid) {
+              result.add(historyEntry);
+              pageSize--;
+            }
+          }
+          next = (++next).remainder(NUM_OF_ENTRIES);
+        }
+        yield result;
+      }
+    }
   }
 
   store(int timestamp, Uint8List data) async {
