@@ -416,7 +416,7 @@ void main() {
       raf.close();
       
       // 10-entries history file, not wrapped, all timestamps the same
-      file = new File("10e-flat.bin");
+      file = new File("10e-all-the-same.bin");
       raf = file.openSync(mode: FileMode.WRITE);
       for (int timestamp = 1; timestamp <= 10; timestamp++) {
         data.setUint64(HistoryEntry.TIMESTAMP_OFFSET, 1);
@@ -442,96 +442,104 @@ void main() {
       History history;
 
       history = new History.open(fileName: "non-existing.bin", dataSize: 16);
-      expect(history.nextEntry, equals(0));
+      expect(history.head, equals(0));
 
       history = new History.open(fileName: "0e.bin", dataSize: 16);
-      expect(history.nextEntry, equals(0));
+      expect(history.head, equals(0));
       
       history = new History.open(fileName: "1e.bin", dataSize: 16);
-      expect(history.nextEntry, equals(1));
+      expect(history.head, equals(0));
 
       history = new History.open(fileName: "1e-incomplete.bin", dataSize: 16);
-      expect(history.nextEntry, equals(0));
+      expect(history.head, equals(0));
       
       history = new History.open(fileName: "1e-invalid-0.bin", dataSize: 16);
-      expect(history.nextEntry, equals(0));
+      expect(history.head, equals(0));
 
       history = new History.open(fileName: "2e.bin", dataSize: 16);
-      expect(history.nextEntry, equals(2));
+      expect(history.head, equals(1));
       
       history = new History.open(fileName: "2e-incomplete.bin", dataSize: 16);
-      expect(history.nextEntry, equals(1));
+      expect(history.head, equals(0));
 
       history = new History.open(fileName: "2e-invalid-0.bin", dataSize: 16);
-      expect(history.nextEntry, equals(2));
+      expect(history.head, equals(1));
       
       history = new History.open(fileName: "2e-invalid-1.bin", dataSize: 16);
-      expect(history.nextEntry, equals(1));
+      expect(history.head, equals(0));
 
       history = new History.open(fileName: "2e-wrapped.bin", dataSize: 16);
-      expect(history.nextEntry, equals(1));
+      expect(history.head, equals(0));
       
       history = new History.open(fileName: "2e-wrapped-invalid-0.bin", dataSize: 16);
-      expect(history.nextEntry, equals(2));
+      expect(history.head, equals(1));
       
       history = new History.open(fileName: "2e-wrapped-invalid-1.bin", dataSize: 16);
-      expect(history.nextEntry, equals(1));
+      expect(history.head, equals(0));
 
       history = new History.open(fileName: "10e.bin", dataSize: 16);
-      expect(history.nextEntry, equals(10));
+      expect(history.head, equals(9));
 
       history = new History.open(fileName: "10e-incomplete.bin", dataSize: 16);
-      expect(history.nextEntry, equals(9));
+      expect(history.head, equals(8));
 
       history = new History.open(fileName: "10e-invalid-0.bin", dataSize: 16);
-      expect(history.nextEntry, equals(10));
+      expect(history.head, equals(9));
 
       history = new History.open(fileName: "10e-invalid-3.bin", dataSize: 16);
-      expect(history.nextEntry, equals(10));
+      expect(history.head, equals(9));
       
       history = new History.open(fileName: "10e-invalid-6.bin", dataSize: 16);
-      expect(history.nextEntry, equals(10));
+      expect(history.head, equals(9));
       
       history = new History.open(fileName: "10e-invalid-3-6.bin", dataSize: 16);
-      expect(history.nextEntry, equals(10));
+      expect(history.head, equals(9));
 
       history = new History.open(fileName: "10e-invalid-9.bin", dataSize: 16);
-      expect(history.nextEntry, equals(9));
-      
+      expect(history.head, equals(8));
+
+      history = new History.open(fileName: "10e-wrapped.bin", dataSize: 16);
+      expect(history.head, equals(4));
+
       history = new History.open(fileName: "10e-wrapped-invalid-0.bin", dataSize: 16);
-      expect(history.nextEntry, equals(5));
+      expect(history.head, equals(4));
 
       history = new History.open(fileName: "10e-wrapped-invalid-3.bin", dataSize: 16);
-      expect(history.nextEntry, equals(3));
+      expect(history.head, equals(2));
 
       history = new History.open(fileName: "10e-wrapped-invalid-6.bin", dataSize: 16);
-      expect(history.nextEntry, equals(4));
+      expect(history.head, equals(3));
       
       history = new History.open(fileName: "10e-wrapped-invalid-3-6.bin", dataSize: 16);
-      expect(history.nextEntry, equals(3));
+      expect(history.head, equals(2));
       
       history = new History.open(fileName: "10e-wrapped-invalid-9.bin", dataSize: 16);
-      expect(history.nextEntry, equals(5));
+      expect(history.head, equals(4));
       
       history = new History.open(fileName: "10e-invalid-all.bin", dataSize: 16);
-      expect(history.nextEntry, equals(0));
+      expect(history.head, equals(0));
       
-      history = new History.open(fileName: "10e-flat.bin", dataSize: 16);
-      expect(history.nextEntry, equals(1));
+      history = new History.open(fileName: "10e-all-the-same.bin", dataSize: 16);
+      expect(history.head, equals(0));
     });
 
 
     test('History.read() test', () async {
       History history;
 
-      history = new History.open(fileName: "10e-invalid-6.bin", dataSize: 16);
+      // history = new History.open(fileName: "10e.bin", dataSize: 16);
+      // Stream<List<HistoryEntry>> readStream = history.read(PAGE_SIZE: 3);
+      // await for (List<HistoryEntry> page in readStream) {
+      //   for (HistoryEntry entry in page) {
+      //     print('Timestamp: ${entry.timestamp} Checksum:${entry.checksum}');
+      //   }
+      //   print('---');
+      // }
 
-      Stream<List<HistoryEntry>> readStream = history.read(3);
-      await for (List<HistoryEntry> page in readStream) {
-        for (HistoryEntry entry in page) {
-          print('Timestamp: ${entry.timestamp} Checksum:${entry.checksum}');
-        }
-        print('---');
+
+      history = new History.open(fileName: "10e-wrapped.bin", dataSize: 16);
+      for (int t = -1; t < 17; t++) {
+        history.find(timestampBegin: t);
       }
 
     });
