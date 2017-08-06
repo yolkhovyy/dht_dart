@@ -320,23 +320,25 @@ class History {
       int recordCounter = _numOfRecords;
       int pageCounter = (recordCounter / PAGE_SIZE).ceil();
       int next = _find(timestampBegin);
-      while (pageCounter-- > 0) {
-        int pageSize = PAGE_SIZE;
-        List<HistoryRecord> result = new List<HistoryRecord>();
-        while (pageSize > 0 && recordCounter-- > 0) {
-          raf = await raf.setPosition(next * _recordSize);
-          ByteData bytes = new ByteData(_recordSize);
-          var r = await raf.readInto(bytes.buffer.asUint8List());
-          if (r == _recordSize) {
-            HistoryRecord record = new HistoryRecord.parse(bytes);
-            if (record.isValid) {
-              result.add(record);
-              pageSize--;
+      if (next >= 0) {
+        while (pageCounter-- > 0) {
+          int pageSize = PAGE_SIZE;
+          List<HistoryRecord> result = new List<HistoryRecord>();
+          while (pageSize > 0 && recordCounter-- > 0) {
+            raf = await raf.setPosition(next * _recordSize);
+            ByteData bytes = new ByteData(_recordSize);
+            var r = await raf.readInto(bytes.buffer.asUint8List());
+            if (r == _recordSize) {
+              HistoryRecord record = new HistoryRecord.parse(bytes);
+              if (record.isValid) {
+                result.add(record);
+                pageSize--;
+              }
             }
+            next = (++next).remainder(_numOfRecords);
           }
-          next = (++next).remainder(_numOfRecords);
+          yield result;
         }
-        yield result;
       }
     }
   }
