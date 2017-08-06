@@ -739,27 +739,50 @@ void main() {
       }
     });
 
-    test('History.read() test', () async {
-      History history;
+    test('History.read() page size test', () async {
+      Map<String, List<int>> histories = {
+        '10e.bin' : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        '10e-wrapped.bin' : [6, 7, 8, 9, 10, 10, 11, 12, 13, 14],
+        '10e-incomplete.bin' : [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        '10e-invalid-0.bin' : [2, 3, 4, 5, 6, 7, 8, 9, 10],
+        '10e-invalid-3.bin' : [1, 2, 3, 5, 6, 7, 8, 9, 10],
+        '10e-invalid-6.bin' : [1, 2, 3, 4, 5, 7, 8, 9, 10],
+        '10e-invalid-3-6.bin' : [1, 2, 3, 5, 7, 8, 9, 10],
+        '10e-invalid-9.bin' : [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        '10e-wrapped-invalid-0.bin' : [6, 7, 8, 9, 10, 11, 12, 13, 14],
+        '10e-wrapped-invalid-3.bin' : [6, 7, 8, 9, 10, 11, 12, 13, 15],
+        '10e-wrapped-invalid-6.bin' : [6, 8, 9, 10, 11, 12, 13, 14, 15],
+        '10e-wrapped-invalid-3-6.bin' : [6, 8, 9, 10, 11, 12, 13, 15],
+        '10e-wrapped-invalid-9.bin' : [6, 7, 8, 9, 10, 11, 12, 13, 14],
+        '10e-all-the-same.bin' : [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        '10e-invalid-all.bin' : [],
+      };
 
-      history = new History.open(fileName: "10e.bin", dataSize: 16);
-      for (int pageSize = 1; pageSize < 3; pageSize++) {
-        Stream<List<HistoryRecord>> readStream = history.read(PAGE_SIZE: pageSize);
-        int numOfPages = (history.numOfRecords / pageSize).ceil();
-        int lastPageSize = history.numOfRecords.remainder(pageSize);
-        if (lastPageSize == 0) {
-          lastPageSize = pageSize;
-        }
-        int pageIndex = 0;
-        await for (List<HistoryRecord> page in readStream) {
-          //print('--- Page:$pageIndex ---');
-          expect(page.length, equals(pageIndex < numOfPages - 1 ? pageSize : lastPageSize));
-          for (HistoryRecord record in page) {
-            //print('Timestamp:${record.timestamp} Checksum:${record.checksum}');
-            expect(record.isValid, equals(true));
-            // TODO check data
+      for (String historyFile in histories.keys) {
+        //print('*** File:$historyFile ***');
+        for (int pageSize = 1; pageSize < 15; pageSize++) {
+          History history = new History.open(fileName: historyFile, dataSize: 16);
+          Stream<List<HistoryRecord>> pages = history.read(PAGE_SIZE: pageSize);
+          int numOfPages = (history.numOfRecords / pageSize).ceil();
+          int lastPageSize = history.numOfRecords.remainder(pageSize);
+          if (lastPageSize == 0) {
+            lastPageSize = pageSize;
           }
-          pageIndex++;
+          int pageIndex = 0;
+          int recordIndex = 0;
+          await for (List<HistoryRecord> page in pages) {
+            //print('--- Page:$pageIndex ---');
+            if (!historyFile.contains('invalid')) {
+              expect(page.length, equals(pageIndex < numOfPages - 1 ? pageSize : lastPageSize));
+            }
+            for (HistoryRecord record in page) {
+              //print('Timestamp:${record.timestamp} Checksum:${record.checksum}');
+              expect(record.isValid, equals(true));
+              expect(record.timestamp, equals(histories[historyFile].elementAt(recordIndex)));
+              recordIndex++;
+            }
+            pageIndex++;
+          }
         }
       }
     }, timeout: new Timeout(new Duration(minutes: 3)));
