@@ -10,7 +10,6 @@ import 'dart:core';
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:async';
-import 'dart:math';
 
 export 'src/history_base.dart';
 
@@ -73,8 +72,7 @@ class HistoryRecord {
 
   ByteData get bytes => _recordBytes;
   bool get isValid =>
-      _checksum ==
-      HistoryRecord.calculateChecksum(data: _recordBytes.buffer.asUint8List(0, _recordBytes.lengthInBytes - CHECKSUM_SIZE));
+    _checksum == calculateChecksum(data: _recordBytes.buffer.asUint8List(0, _recordBytes.lengthInBytes - CHECKSUM_SIZE));
 
   static calculateChecksum({int checksum = 0, Uint8List data}) {
     data.forEach((item) => checksum += item);
@@ -86,6 +84,9 @@ class History {
   static const int _DEFAULT_HISTORY_SIZE = 16;
   static const int _DEFAULT_HISTORY_PAGE_SIZE = 4;
   static const String DEFAULT_HISTORY_FILE_NAME = 'history.bin';
+
+  static const int TIMESTAMP_MIN = -9223372036854775808;  // -pow(2, 63);
+  static const int TIMESTAMP_MAX = 9223372036854775807;   //pow(2, 63) - 1;
 
   // History file name
   String _fileName = DEFAULT_HISTORY_FILE_NAME;
@@ -111,8 +112,8 @@ class History {
   int _tail = 0;
   int get tail => _tail;
   
-  int _numOfEntries = 0;
-  int get numOfEntries => _numOfEntries;
+  int _numOfRecords = 0;
+  int get numOfRecords => _numOfRecords;
 
   History.open({String fileName = DEFAULT_HISTORY_FILE_NAME,
                 int dataSize = 0,
@@ -133,10 +134,10 @@ class History {
     if (file.existsSync())  {
 
       FileStat stat = file.statSync();
-      _numOfEntries = (stat.size / _recordSize).floor();
+      _numOfRecords = (stat.size / _recordSize).floor();
 
-      if (_numOfEntries > 0) {
-        int b = _numOfEntries;
+      if (_numOfRecords > 0) {
+        int b = _numOfRecords;
         int timestampMax = 0;
 
         ByteData bytes = new ByteData(_recordSize);
@@ -150,7 +151,7 @@ class History {
           if (a_ == a) {
             _tail = a_;
           } else {
-            _tail = _numOfEntries > 0 ? (_head + 1).remainder(_numOfEntries) : 0;
+            _tail = _numOfRecords > 0 ? (_head + 1).remainder(_numOfRecords) : 0;
           }
         } else {
           timestampMax = record._timestamp;
@@ -160,7 +161,7 @@ class History {
             raf.readIntoSync(bytes.buffer.asUint8List());
             record = new HistoryRecord.parse(bytes);
             if (!record.isValid) {
-              a = _linearSearchMax(raf, a, b < _numOfEntries ? b : b - 1, timestampMax);
+              a = _linearSearchMax(raf, a, b < _numOfRecords ? b : b - 1, timestampMax);
               break;
             } else if (record._timestamp > timestampMax) {
               timestampMax = record._timestamp;
@@ -170,7 +171,7 @@ class History {
             }            
           }
           _head = a;
-          _tail = _numOfEntries > 0 ? (_head + 1).remainder(_numOfEntries) : 0;
+          _tail = _numOfRecords > 0 ? (_head + 1).remainder(_numOfRecords) : 0;
         }
         raf.closeSync();
       }
@@ -182,13 +183,13 @@ class History {
 
     if (a == null) {
       throw new ArgumentError.notNull('a');
-    } else if (a < 0 || a >= _numOfEntries) {
+    } else if (a < 0 || a >= _numOfRecords) {
       throw new ArgumentError("Parameter (a) is out of range");
     }
 
     if (b == null) {
       throw new ArgumentError.notNull('a');
-    } else if (b < 0 || b >= _numOfEntries) {
+    } else if (b < 0 || b >= _numOfRecords) {
       throw new ArgumentError("Parameter (b) is out of range");
     }
 
@@ -197,7 +198,7 @@ class History {
     ByteData bytes = new ByteData(_recordSize);
 
     while (a != b) {
-      a = (a + 1).remainder(_numOfEntries);
+      a = (a + 1).remainder(_numOfRecords);
       raf.setPositionSync(a * _recordSize);
       raf.readIntoSync(bytes.buffer.asUint8List());
       HistoryRecord record = new HistoryRecord.parse(bytes);
@@ -219,7 +220,7 @@ class History {
       result = a;
       ByteData bytes = new ByteData(_recordSize);
       while (a != b) {
-        a = (a + 1).remainder(_numOfEntries);
+        a = (a + 1).remainder(_numOfRecords);
         raf.setPositionSync(a * _recordSize);
         raf.readIntoSync(bytes.buffer.asUint8List());
         HistoryRecord record = new HistoryRecord.parse(bytes);
@@ -246,7 +247,7 @@ class History {
     int result = -1;  // returns -1 if nothing found
 
     File file = new File(_fileName);
-    if (file.existsSync() && _numOfEntries > 0) {
+    if (file.existsSync() && _numOfRecords > 0) {
       RandomAccessFile raf = file.openSync(mode: FileMode.READ);
       ByteData bytes = new ByteData(_recordSize);
 
@@ -274,9 +275,9 @@ class History {
           int b = _head;
 
           while (a != b) {
-            int step = (b - a + _numOfEntries).remainder(_numOfEntries);
+            int step = (b - a + _numOfRecords).remainder(_numOfRecords);
             step = step > 1 ? (step / 2).floor() : 1;
-            int next = (a + step).remainder(_numOfEntries);
+            int next = (a + step).remainder(_numOfRecords);
             //print('head:$head tail:$tail step:$step');
             raf.setPositionSync(next * _recordSize);
             raf.readIntoSync(bytes.buffer.asUint8List());
@@ -304,27 +305,27 @@ class History {
     return result;
   }
 
-  Stream<List<HistoryRecord>> read({int timestampBegin = 0, int timestampEnd = 0x7FFFFFFFFFFFFFFF,
+  Stream<List<HistoryRecord>> read({int timestampBegin = TIMESTAMP_MIN, int timestampEnd = TIMESTAMP_MAX,
     final int PAGE_SIZE  = _DEFAULT_HISTORY_PAGE_SIZE}) async* {
 
     if (PAGE_SIZE == null) {
       throw new ArgumentError.notNull('PAGE_SIZE');
     } else if (PAGE_SIZE <= 0) {
-      throw new ArgumentError("PAGE_SIZE parameter must be greater than 0");
+      throw new ArgumentError("Parameter (PAGE_SIZE) must be greater than 0");
     }
 
     File file = new File(this._fileName);
     if (file.existsSync()) {
-      ByteData bytes = new ByteData(_recordSize);
       RandomAccessFile raf = await file.open(mode: FileMode.READ);
-      int numOfEntries = _numOfEntries;
-      int numOfPages = (numOfEntries / PAGE_SIZE).ceil();
+      int recordCounter = _numOfRecords;
+      int pageCounter = (recordCounter / PAGE_SIZE).ceil();
       int next = _find(timestampBegin);
-      while (numOfPages-- > 0) {
+      while (pageCounter-- > 0) {
         int pageSize = PAGE_SIZE;
         List<HistoryRecord> result = new List<HistoryRecord>();
-        while (pageSize > 0 && numOfEntries-- > 0) {
+        while (pageSize > 0 && recordCounter-- > 0) {
           raf = await raf.setPosition(next * _recordSize);
+          ByteData bytes = new ByteData(_recordSize);
           var r = await raf.readInto(bytes.buffer.asUint8List());
           if (r == _recordSize) {
             HistoryRecord record = new HistoryRecord.parse(bytes);
@@ -333,7 +334,7 @@ class History {
               pageSize--;
             }
           }
-          next = (++next).remainder(numOfEntries);
+          next = (++next).remainder(_numOfRecords);
         }
         yield result;
       }
