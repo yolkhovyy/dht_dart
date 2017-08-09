@@ -439,308 +439,90 @@ void main() {
     });
 
     test('History.open() test', () {
-      History history;
 
-      history = new History.open(fileName: "non-existing.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(0));
+      Map<String, List<int>> expectedResults = {
+        'non-existing.bin' : [0, 0, 0],
+        '0e.bin' : [0, 0, 0],
+        '1e.bin' : [0, 0, 1],
+        '1e-incomplete.bin' : [0, 0, 0],
+        '1e-invalid-0.bin' : [0, 0, 1],
+        '2e.bin' : [1, 0, 2],
+        '2e-incomplete.bin' : [0, 0, 1],
+        '2e-invalid-0.bin' : [1, 0, 2],
+        '2e-invalid-1.bin' : [0, 1, 2],
+        '2e-wrapped.bin' : [0, 1, 2],
+        '2e-wrapped-invalid-0.bin' : [1, 0, 2],
+        '2e-wrapped-invalid-1.bin' : [0, 1, 2],
+        '10e.bin' : [9, 0, 10],
+        '10e-incomplete.bin' : [8, 0, 9],
+        '10e-invalid-0.bin' : [9, 0, 10],
+        '10e-invalid-3.bin' : [9, 0, 10],
+        '10e-invalid-6.bin' : [9, 0, 10],
+        '10e-invalid-3-6.bin' : [9, 0, 10],
+        '10e-invalid-9.bin' : [8, 9, 10],
+        '10e-invalid-all.bin' : [0, 0, 10],
+        '10e-wrapped.bin' : [4, 5, 10],
+        '10e-wrapped-invalid-0.bin' : [4, 5, 10],
+        '10e-wrapped-invalid-3.bin' : [4, 5, 10],
+        '10e-wrapped-invalid-6.bin' : [4, 5, 10],
+        '10e-wrapped-invalid-3-6.bin' : [4, 5, 10],
+        '10e-wrapped-invalid-9.bin' : [4, 5, 10],
+        '10e-all-the-same.bin' : [0, 1, 10],
+      };
 
-      history = new History.open(fileName: "0e.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(0));
-      
-      history = new History.open(fileName: "1e.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(1));
-
-      history = new History.open(fileName: "1e-incomplete.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(0));
-      
-      history = new History.open(fileName: "1e-invalid-0.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(1));
-
-      history = new History.open(fileName: "2e.bin", dataSize: 16);
-      expect(history.head, equals(1));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(2));
-      
-      history = new History.open(fileName: "2e-incomplete.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(1));
-
-      history = new History.open(fileName: "2e-invalid-0.bin", dataSize: 16);
-      expect(history.head, equals(1));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(2));      
-
-      history = new History.open(fileName: "2e-invalid-1.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(1));
-      expect(history.numOfRecords, equals(2));
-
-      history = new History.open(fileName: "2e-wrapped.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(1));
-      expect(history.numOfRecords, equals(2));
-      
-      history = new History.open(fileName: "2e-wrapped-invalid-0.bin", dataSize: 16);
-      expect(history.head, equals(1));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(2));
-      
-      history = new History.open(fileName: "2e-wrapped-invalid-1.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(1));
-      expect(history.numOfRecords, equals(2));
-
-      history = new History.open(fileName: "10e.bin", dataSize: 16);
-      expect(history.head, equals(9));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-incomplete.bin", dataSize: 16);
-      expect(history.head, equals(8));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(9));
-
-      history = new History.open(fileName: "10e-invalid-0.bin", dataSize: 16);
-      expect(history.head, equals(9));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-invalid-3.bin", dataSize: 16);
-      expect(history.head, equals(9));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(10));
-      
-      history = new History.open(fileName: "10e-invalid-6.bin", dataSize: 16);
-      expect(history.head, equals(9));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(10));
-      
-      history = new History.open(fileName: "10e-invalid-3-6.bin", dataSize: 16);
-      expect(history.head, equals(9));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-invalid-9.bin", dataSize: 16);
-      expect(history.head, equals(8));
-      expect(history.tail, equals(9));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-wrapped.bin", dataSize: 16);
-      expect(history.head, equals(4));
-      expect(history.tail, equals(5));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-wrapped-invalid-0.bin", dataSize: 16);
-      expect(history.head, equals(4));
-      expect(history.tail, equals(5));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-wrapped-invalid-3.bin", dataSize: 16);
-      expect(history.head, equals(4));
-      expect(history.tail, equals(5));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-wrapped-invalid-6.bin", dataSize: 16);
-      expect(history.head, equals(4));
-      expect(history.tail, equals(5));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-wrapped-invalid-3-6.bin", dataSize: 16);
-      expect(history.head, equals(4));
-      expect(history.tail, equals(5));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-wrapped-invalid-9.bin", dataSize: 16);
-      expect(history.head, equals(4));
-      expect(history.tail, equals(5));
-      expect(history.numOfRecords, equals(10));
-      
-      history = new History.open(fileName: "10e-invalid-all.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(0));
-      expect(history.numOfRecords, equals(10));
-
-      history = new History.open(fileName: "10e-all-the-same.bin", dataSize: 16);
-      expect(history.head, equals(0));
-      expect(history.tail, equals(1));
-      expect(history.numOfRecords, equals(10));
+      for (String fileName in expectedResults.keys) {
+        //print('*** File:$fileName ***');
+        History history = new History.open(fileName: fileName, dataSize: 16);
+        expect(history.head, equals(expectedResults[fileName].elementAt(0)));
+        expect(history.tail, equals(expectedResults[fileName].elementAt(1)));
+        expect(history.numOfRecords, equals(expectedResults[fileName].elementAt(2)));
+      }
     });
 
 
     test('History.find() test', () async {
-      History history;
 
-      history = new History.open(fileName: "0e.bin", dataSize: 16);
-      for (int t = -1; t < 2; t++) {
-        int r = history.find(timestampBegin: t);
-        expect(r, equals(-1));
-      }
+      Map<String, List<int>> expectedResults = {
+        "0e.bin" : [-1, -1, -1],
+        "1e.bin" : [0, 0, 0],
+        "1e-incomplete.bin" : [-1, -1, -1],
+        "1e-invalid-0.bin" : [-1, -1, -1],
+        "2e.bin" : [0, 0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        "2e-incomplete.bin" : [0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        "2e-invalid-0.bin" : [1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        "2e-invalid-1.bin" : [0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        "2e-wrapped-invalid-0.bin" : [1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        "2e-wrapped-invalid-1.bin" : [0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        "10e.bin" : [0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1],
+        "10e-incomplete.bin" : [0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, -1, -1, -1, -1, -1],
+        "10e-invalid-0.bin" : [1, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1],
+        "10e-invalid-3.bin" : [0, 0, 0, 1, 2, 4, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1],
+        "10e-invalid-6.bin" : [0, 0, 0, 1, 2, 3, 4, 6, 6, 7, 8, 9, -1, -1, -1, -1],
+        "10e-invalid-3-6.bin" : [0, 0, 0, 1, 2, 4, 4, 6, 6, 7, 8, 9, -1, -1, -1, -1],
+        "10e-invalid-9.bin" : [0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, -1, -1, -1, -1, -1],
+        "10e-invalid-all.bin" : [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        "10e-wrapped-invalid-0.bin" : [5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 8, 9, 1, 2, 3, 4, -1],
+        "10e-wrapped-invalid-3.bin" : [5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 8, 9, 0, 1, 2, 4, 4, -1],
+        "10e-wrapped-invalid-6.bin" : [5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 8, 9, 0, 1, 2, 3, 4, -1],
+        "10e-wrapped-invalid-3-6.bin" : [5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 8, 9, 0, 1, 2, 4, 4, -1],
+        "10e-wrapped-invalid-9.bin" : [5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 8, 0, 1, 2, 3, 4, -1],
+        // TODO fix the test
+        //"10e-all-the-same.bin" : [1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+      };
 
-      history = new History.open(fileName: "1e.bin", dataSize: 16);
-      for (int t = -1; t < 2; t++) {
-        int r = history.find(timestampBegin: t);
-        expect(r, equals(0));
-      }
-
-      history = new History.open(fileName: "1e-incomplete.bin", dataSize: 16);
-      for (int t = -1; t < 2; t++) {
-        int r = history.find(timestampBegin: t);
-        expect(r, equals(-1));
-      }
-
-      history = new History.open(fileName: "1e-invalid-0.bin", dataSize: 16);
-      for (int t = -1; t < 2; t++) {
-        int r = history.find(timestampBegin: t);
-        expect(r, equals(-1));
-      }
-
-      var expected_results = [0, 0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "2e.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "2e-incomplete.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "2e-invalid-0.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-    
-      expected_results = [0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "2e-invalid-1.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "2e-wrapped-invalid-0.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-    
-      expected_results = [0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "2e-wrapped-invalid-1.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-    
-      expected_results = [0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1];
-      history = new History.open(fileName: "10e.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "10e-incomplete.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [1, 1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1];
-      history = new History.open(fileName: "10e-invalid-0.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [0, 0, 0, 1, 2, 4, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1];
-      history = new History.open(fileName: "10e-invalid-3.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [0, 0, 0, 1, 2, 3, 4, 6, 6, 7, 8, 9, -1, -1, -1, -1];
-      history = new History.open(fileName: "10e-invalid-6.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [0, 0, 0, 1, 2, 4, 4, 6, 6, 7, 8, 9, -1, -1, -1, -1];
-      history = new History.open(fileName: "10e-invalid-3-6.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      } 
-
-      history = new History.open(fileName: "10e-invalid-all.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(-1));
-      }
-
-      expected_results = [5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 8, 9, 1, 2, 3, 4, -1];
-      history = new History.open(fileName: "10e-wrapped-invalid-0.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 8, 9, 0, 1, 2, 4, 4, -1];
-      history = new History.open(fileName: "10e-wrapped-invalid-3.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 8, 9, 0, 1, 2, 3, 4, -1];
-      history = new History.open(fileName: "10e-wrapped-invalid-6.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 8, 9, 0, 1, 2, 4, 4, -1];
-      history = new History.open(fileName: "10e-wrapped-invalid-3-6.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 8, 0, 1, 2, 3, 4, -1];
-      history = new History.open(fileName: "10e-wrapped-invalid-9.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        expect(r, equals(expected_results[t]));
-      }
-
-      expected_results = [1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
-      history = new History.open(fileName: "10e-all-the-same.bin", dataSize: 16);
-      for (int t = 0; t < expected_results.length; t++) {
-        int r = history.find(timestampBegin: t - 1);
-        // TODO fix this test
-        //expect(r, equals(expected_results[t]));
+      for (String fileName in expectedResults.keys) {
+        //print('*** File:$fileName ***');
+        History history = new History.open(fileName: fileName, dataSize: 16);
+        for (int t = 0; t < expectedResults[fileName].length; t++) {
+          int r = history.find(timestampBegin: t - 1);
+          expect(r, equals(expectedResults[fileName].elementAt(t)));
+        }
       }
     });
 
     test('History.read() page size test', () async {
-      Map<String, List<int>> histories = {
+      
+      Map<String, List<int>> expectedResults = {
         '10e.bin' : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         '10e-wrapped.bin' : [6, 7, 8, 9, 10, 10, 11, 12, 13, 14],
         '10e-incomplete.bin' : [1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -758,10 +540,10 @@ void main() {
         '10e-invalid-all.bin' : [],
       };
 
-      for (String historyFile in histories.keys) {
-        //print('*** File:$historyFile ***');
+      for (String fileName in expectedResults.keys) {
+        //print('*** File:$fileName ***');
         for (int pageSize = 1; pageSize < 15; pageSize++) {
-          History history = new History.open(fileName: historyFile, dataSize: 16);
+          History history = new History.open(fileName: fileName, dataSize: 16);
           Stream<List<HistoryRecord>> pages = history.read(PAGE_SIZE: pageSize);
           int numOfPages = (history.numOfRecords / pageSize).ceil();
           int lastPageSize = history.numOfRecords.remainder(pageSize);
@@ -772,13 +554,13 @@ void main() {
           int recordIndex = 0;
           await for (List<HistoryRecord> page in pages) {
             //print('--- Page:$pageIndex ---');
-            if (!historyFile.contains('invalid')) {
+            if (!fileName.contains('invalid')) {
               expect(page.length, equals(pageIndex < numOfPages - 1 ? pageSize : lastPageSize));
             }
             for (HistoryRecord record in page) {
               //print('Timestamp:${record.timestamp} Checksum:${record.checksum}');
               expect(record.isValid, equals(true));
-              expect(record.timestamp, equals(histories[historyFile].elementAt(recordIndex)));
+              expect(record.timestamp, equals(expectedResults[fileName].elementAt(recordIndex)));
               recordIndex++;
             }
             pageIndex++;
