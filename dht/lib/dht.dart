@@ -3,6 +3,7 @@
 
 library dht;
 
+import 'dart:core';
 import 'dart:async';
 import 'dart:isolate';
 import 'dart-ext:dht_native';
@@ -16,12 +17,12 @@ enum RPI_Pin {
 
 class DHT {
 
-  int model;
-  int pin;
+  int _model;
+  int _pin;
 
   DHT(DHT_Model model, RPI_Pin pin) {
-    this.model = 22;
-    this.pin = pin.index + 2;
+    this._model = 22;
+    this._pin = pin.index + 2;
   }
 
   static SendPort _sendPort;
@@ -33,13 +34,24 @@ class DHT {
     receivePort.handler = (result) {
       receivePort.close();
       if (result != null) {
-        completer.complete(result);
+
+        // Add timestamp, complete
+        int timestamp = new DateTime.now().millisecondsSinceEpoch;
+        List<num> data = [timestamp, result[0], result[1]];
+        completer.complete(data);
+
+        // Store in history
+        // ByteData bd = new ByteData(16);
+        // bd.setFloat64(0, result[0]);
+        // bd.setFloat64(8, result[1]);
+        // new DHT_History().store(timestamp, bd.buffer.asUint8List());
+
       } else {
         completer.completeError(new Exception("DHT data read failed"));
       }
     };
 
-    var args = [model, pin, receivePort.sendPort];
+    var args = [_model, _pin, receivePort.sendPort];
     _getDHTServicePort.send(args);
 
     return completer.future;
@@ -54,3 +66,4 @@ class DHT {
 
   SendPort _DHTServicePort() native "DHTRead_ServicePort";
 }
+

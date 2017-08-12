@@ -73,29 +73,22 @@ void DHTRead(Dart_Port dest_port_id, Dart_CObject* message) {
             if (values != NULL) {
                 Dart_CObject result;
                 result.type = Dart_CObject_kArray;
-                result.value.as_array.length = 3;
+                result.value.as_array.length = 2;
 
-                Dart_CObject* value0 = new Dart_CObject();
-                value0->type = Dart_CObject_kInt64;
-                value0->value.as_int64 = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()).count();
-                result.value.as_array.values[0] = value0;
+                Dart_CObject* humidity = new Dart_CObject();
+                humidity->type = Dart_CObject_kDouble;
+                humidity->value.as_double = static_cast<double>(values[0]);
+                result.value.as_array.values[0] = humidity;
 
-                Dart_CObject* value1 = new Dart_CObject();
-                value1->type = Dart_CObject_kDouble;
-                value1->value.as_double = static_cast<double>(values[0]);
-                result.value.as_array.values[1] = value1;
-
-                Dart_CObject* value2 = new Dart_CObject();
-                value2->type = Dart_CObject_kDouble;
-                value2->value.as_double = static_cast<double>(values[1]);
-                result.value.as_array.values[2] = value2;
+                Dart_CObject* temperature = new Dart_CObject();
+                temperature->type = Dart_CObject_kDouble;
+                temperature->value.as_double = static_cast<double>(values[1]);
+                result.value.as_array.values[1] = temperature;
 
                 Dart_PostCObject(reply_port_id, &result);
 
-                free(value2);
-                free(value1);
-                free(value0);
+                free(temperature);
+                free(humidity);
                 free(values);
                 // It is OK that result is destroyed when function exits.
                 // Dart_PostCObject has copied its data.
