@@ -6,6 +6,7 @@ library dht;
 import 'dart:core';
 import 'dart:async';
 import 'dart:isolate';
+import 'dart:typed_data';
 import 'dart-ext:dht_native';
 
 enum DHT_Model { DHT22, AM2302 }
@@ -31,20 +32,14 @@ class DHT {
     Completer completer = new Completer();
 
     RawReceivePort receivePort = new RawReceivePort();
-    receivePort.handler = (result) {
+    receivePort.handler = (TypedData result) {
       receivePort.close();
       if (result != null) {
 
         // Add timestamp, complete
         int timestamp = new DateTime.now().millisecondsSinceEpoch;
-        List<num> data = [timestamp, result[0], result[1]];
+        List<num> data = [timestamp, result.buffer.asFloat32List().elementAt(0), result.buffer.asFloat32List().elementAt(1)];
         completer.complete(data);
-
-        // Store in history
-        // ByteData bd = new ByteData(16);
-        // bd.setFloat64(0, result[0]);
-        // bd.setFloat64(8, result[1]);
-        // new DHT_History().store(timestamp, bd.buffer.asUint8List());
 
       } else {
         completer.completeError(new Exception("DHT data read failed"));

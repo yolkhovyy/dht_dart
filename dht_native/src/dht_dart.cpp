@@ -2,8 +2,9 @@
 // is governed by a BSD-style license that can be found in the LICENSE file.
 
 #include <iostream>
+#include <iomanip>
+
 #include <fstream>
-#include <chrono>
 #include <cstring>
 #include "include/dart_api.h"
 #include "include/dart_native_api.h"
@@ -72,27 +73,14 @@ void DHTRead(Dart_Port dest_port_id, Dart_CObject* message) {
             float* values = dht_read(model, pin);
             if (values != NULL) {
                 Dart_CObject result;
-                result.type = Dart_CObject_kArray;
-                result.value.as_array.length = 2;
-
-                Dart_CObject* humidity = new Dart_CObject();
-                humidity->type = Dart_CObject_kDouble;
-                humidity->value.as_double = static_cast<double>(values[0]);
-                result.value.as_array.values[0] = humidity;
-
-                Dart_CObject* temperature = new Dart_CObject();
-                temperature->type = Dart_CObject_kDouble;
-                temperature->value.as_double = static_cast<double>(values[1]);
-                result.value.as_array.values[1] = temperature;
-
+                result.type = Dart_CObject_kTypedData;
+                result.value.as_typed_data.type = Dart_TypedData_kUint8;
+                result.value.as_typed_data.length = 8;
+                result.value.as_typed_data.values = reinterpret_cast<uint8_t*>(values);
                 Dart_PostCObject(reply_port_id, &result);
-
-                free(temperature);
-                free(humidity);
                 free(values);
                 // It is OK that result is destroyed when function exits.
                 // Dart_PostCObject has copied its data.
-
                 return;
             }
         }
