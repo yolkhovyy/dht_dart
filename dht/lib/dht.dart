@@ -4,6 +4,7 @@
 library dht;
 
 import 'dart:core';
+import 'dart:io';
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -50,6 +51,13 @@ class DHT {
     _getDHTServicePort.send(args);
 
     return completer.future;
+  }
+
+  Stream<List<num>> readStream(Duration interval) async* {
+    while (true) {
+      yield await read();
+      sleep(interval);
+    }
   }
 
   SendPort get _getDHTServicePort {

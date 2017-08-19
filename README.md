@@ -6,9 +6,12 @@ Supported devices:
 - DHT22 and AM2302
 
 ## Release notes
+0.0.5
+- Added DHT22.readStream(Duration)
+
 0.0.4
-- Native library transfers sensor data as TypedData i.s.o. an array of two Doubles
 - Native library is not binary compatible with version 0.0.3 - please upgrade as described further in [Native lib installation/upgrade]
+- Native library's DHT22.read() returns sensor data as TypedData i.s.o. an array of two Doubles
 
 ## Copyright notice
 
@@ -25,21 +28,21 @@ Your use of the DHT Dart/Native signifies acknowledgement of and agreement to th
 
 ## Content
 
-dht/ - Dart library
+  dht/ - Dart library
 
-dht_native/ - Native library, includes Adafruit Industries source code
+  dht_native/ - Native library, includes Adafruit Industries source code
 
-third_party/
+  third_party/
 	DHT22-sensor-driver/ - Linux driver
 
 ## Native lib installation/upgrade
 
-$ sudo cp libdht_native.so /usr/local/lib/
-$ sudo ldconfig
+  $ sudo cp libdht_native.so /usr/local/lib/
+  $ sudo ldconfig
 
 ## Linux driver insertion example (optional)
 
-$ sudo insmod dht22_driver.ko gpio=4 autoupdate=1
+  $ sudo insmod dht22_driver.ko gpio=4 autoupdate=1
 
 ## Usage
 
