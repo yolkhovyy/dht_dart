@@ -5,17 +5,6 @@ Supported devices:
 - Raspberry Pi 3
 - DHT22 and AM2302
 
-## Release notes
-0.0.6
-- Implemented sampling history
-
-0.0.5
-- Added DHT22.readStream(Duration)
-
-0.0.4
-- Native library is not binary compatible with version 0.0.3 - please upgrade as described further in [Native lib installation/upgrade]
-- Native library's DHT22.read() returns sensor data as TypedData i.s.o. an array of two Doubles
-
 ## Copyright notice
 
 Use of the DHT Dart/Native source code is governed by a BSD-style license that can be found in the LICENSE files in corresponding folders.
