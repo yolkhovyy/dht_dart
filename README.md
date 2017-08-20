@@ -6,6 +6,9 @@ Supported devices:
 - DHT22 and AM2302
 
 ## Release notes
+0.0.6
+- Implemented sampling history
+
 0.0.5
 - Added DHT22.readStream(Duration)
 
