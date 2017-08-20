@@ -19,12 +19,32 @@ enum RPI_Pin {
 
 class DHT {
 
+  static const int _DEFAULT_BUFFER_SIZE = 0;
+  static const int _DEFAULT_HISTORY_PAGE_SIZE = 10;
+
+  static const int TIMESTAMP_MIN = -9223372036854775808;  // -pow(2, 63);
+  static const int TIMESTAMP_MAX = 9223372036854775807;   //pow(2, 63) - 1;
+
   int _model;
   int _pin;
+  
+  List<List<num>> _buffer;
+  int _bufferSize;
+  int _bufferHead = 0;
+  int _bufferTail = 0;
+  int _bufferNumOfEntries = 0;
 
-  DHT(DHT_Model model, RPI_Pin pin) {
+  DHT(DHT_Model model, RPI_Pin pin, [int bufferSize = _DEFAULT_BUFFER_SIZE]) {
+
+    if (bufferSize == null) {
+      throw new ArgumentError.notNull('bufferSize');
+    } else if (bufferSize < 0) {
+      throw new ArgumentError("Parameter (bufferSize) must be greater than or equal to 0");
+    }
+
     this._model = 22;
     this._pin = pin.index + 2;
+    this._bufferSize = bufferSize;
   }
 
   static SendPort _sendPort;
@@ -37,13 +57,32 @@ class DHT {
       receivePort.close();
       if (result != null) {
 
-        // Add timestamp, complete
+        // Add timestamp
         int timestamp = new DateTime.now().millisecondsSinceEpoch;
-        List<num> data = [timestamp, result.buffer.asFloat32List().elementAt(0), result.buffer.asFloat32List().elementAt(1)];
-        completer.complete(data);
+        List<num> sample = [timestamp, result.buffer.asFloat32List().elementAt(0), result.buffer.asFloat32List().elementAt(1)];
+
+        // Insert into buffer
+        if (_bufferSize > 0) {
+          if (_buffer == null) {
+            _buffer = new List<List<num>>(_bufferSize);
+          }
+          _buffer[_bufferHead] = sample;
+          _bufferHead = (++_bufferHead).remainder(_bufferSize);
+          if (_bufferHead == _bufferTail) {
+            _bufferTail = (++_bufferTail).remainder(_bufferSize);
+          }
+          if (_bufferNumOfEntries < _bufferSize) {
+            ++_bufferNumOfEntries;
+          }
+          // Debug, add sample[3] = _bufferHead;
+          // print('Timestamp: ${sample[0]}, humidity: ${sample[1].toStringAsFixed(1)}, temperature: ${sample[2].toStringAsFixed(1)} i:${sample[3]} n:$_bufferNumOfEntries h:$_bufferHead t:$_bufferTail');
+        }
+
+        // Complete
+        completer.complete(sample);
 
       } else {
-        completer.completeError(new Exception("DHT data read failed"));
+        completer.completeError(new Exception("DHT.read() failed"));
       }
     };
 
@@ -55,8 +94,98 @@ class DHT {
 
   Stream<List<num>> readStream(Duration interval) async* {
     while (true) {
-      yield await read();
-      sleep(interval);
+      try {
+        yield await read();
+        sleep(interval);
+      } catch (e) {
+        print(e);
+      }
+    }
+  }
+
+  Future<int> _find({final int timestamp}) async {
+
+    int result = -1;  // -1 if nothing found
+
+    if (_bufferNumOfEntries > 0) {
+      List<num> entry = _buffer[_bufferTail];
+      if (entry[0] >= timestamp) {
+        // Found, the tail
+        result = _bufferTail;
+      } else {
+        int lastSampleIndex = (_bufferHead - 1).remainder(_bufferNumOfEntries);
+        entry = _buffer[lastSampleIndex];
+        if (entry[0] == timestamp) {
+          // Found, the last sample
+          result = lastSampleIndex ;
+        } else if (entry[0] < timestamp) {
+          // Nothing found
+        } else {
+          int a = _bufferHead;
+          int b = lastSampleIndex;
+          int step;
+          while ((step = ((b - a + _bufferNumOfEntries).remainder(_bufferNumOfEntries) / 2).floor()) >= 1) {
+            int next = (a + step).remainder(_bufferNumOfEntries);
+            entry = _buffer[next];
+            if (entry[0] == timestamp) {
+              result = next;
+              break;
+            } else if (entry[0] < timestamp) {
+              a = next;
+            } else {
+              b = next;
+              result = next;
+            }
+          }
+          if (result == -1) {
+            entry = _buffer[b];
+            if (entry[0] >= timestamp) {
+              result = b;
+            }
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  Stream<List<List<num>>> readHistory({final int begin = TIMESTAMP_MIN, final int end = TIMESTAMP_MAX,
+    final int pageSize  = _DEFAULT_HISTORY_PAGE_SIZE}) async* {
+
+    if (pageSize == null) {
+      throw new ArgumentError.notNull('pageSize');
+    } else if (pageSize <= 0) {
+      throw new ArgumentError("Parameter (pageSize) must be greater than 0");
+    } else if (end <= begin) {
+      throw new ArgumentError("The (end) parameter must be greater than the (begin) parameter");
+    }
+
+    if (_bufferNumOfEntries > 0) {
+      int entryCounter = _bufferNumOfEntries;
+      int pageCounter = (entryCounter / pageSize).ceil();
+      int next = await _find(timestamp : begin);
+      if (next >= 0) {
+        while (pageCounter-- > 0) {
+          int sizePage = pageSize;
+          List<List<num>> result = new List<List<num>>();
+          while (sizePage > 0 && entryCounter-- > 0) {
+            List<num> entry = _buffer[next];
+            if (entry[0] >= begin && entry[0] <= end) {
+              result.add(entry);
+              sizePage--;
+            }
+            next = (++next).remainder(_bufferNumOfEntries);
+            if (next == _bufferTail) {
+              break;
+            }
+          }
+          yield result;
+          if (next == _bufferTail) {
+            break;
+          }
+        }
+      }
     }
   }
 
