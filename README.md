@@ -1,9 +1,10 @@
 # DHT Dart/Native library
 
-A library for DHTxx sensor (see https://www.adafruit.com/product/385).
+A library for DHTxx and SHT3x sensors.
 Supported devices:
 - Raspberry Pi 3
-- DHT22 and AM2302
+- DHT22/AM2302 (see https://www.adafruit.com/product/385)
+- SHT3x (see https://www.sensirion.com/en/environmental-sensors/humidity-sensors/digital-humidity-sensors-for-various-applications/)
 
 ## Copyright notice
 
@@ -45,4 +46,5 @@ Simple usage examples see in the dht/example/ folder
 Please file feature requests and bugs at the [issue tracker][tracker].
 
 [tracker]: https://github.com/yolkhovyy/dht_dart/issues
+
 
