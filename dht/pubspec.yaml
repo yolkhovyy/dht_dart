@@ -1,6 +1,6 @@
 name: dht
-description: DHT22 humidity and temperature sensor library
-version: 0.0.6
+description: DHT22/SHT3x humidity and temperature sensor library
+version: 0.0.7
 homepage: https://github.com/yolkhovyy/dht_dart
 author: Yuriy Olkhovyy <yuriy.olkhovyy@gmail.com>
 

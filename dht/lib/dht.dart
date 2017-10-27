@@ -10,11 +10,11 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart-ext:dht_native';
 
-enum DHT_Model { DHT22, AM2302 }
+enum DHT_Model { DHT22, AM2302, SHT3x }
 enum RPI_Pin {
   GPIO2, GPIO3, GPIO4, GPIO5, GPIO6, GPIO7, GPIO8, GPIO9,
   GPIO10, GPIO11, GPIO12, GPIO13, GPIO14, GPIO15, GPIO16, GPIO17, GPIO18, GPIO19,
-  GPIO20, GPIO21, GPIO22, GPIO23, GPIO24, GPIO25, GPIO26, GPIO27
+  GPIO20, GPIO21, GPIO22, GPIO23, GPIO24, GPIO25, GPIO26, GPIO27, I2C0, I2C1
 }
 
 class DHT {
@@ -27,6 +27,7 @@ class DHT {
 
   int _model;
   int _pin;
+  int _i2cAddress;
   
   List<List<num>> _buffer;
   int _bufferSize;
@@ -34,7 +35,7 @@ class DHT {
   int _bufferTail = 0;
   int _bufferNumOfEntries = 0;
 
-  DHT(DHT_Model model, RPI_Pin pin, [int bufferSize = _DEFAULT_BUFFER_SIZE]) {
+  DHT(DHT_Model model, RPI_Pin pin, [int i2cAddress = 0x45, int bufferSize = _DEFAULT_BUFFER_SIZE]) {
 
     if (bufferSize == null) {
       throw new ArgumentError.notNull('bufferSize');
@@ -42,8 +43,22 @@ class DHT {
       throw new ArgumentError("Parameter (bufferSize) must be greater than or equal to 0");
     }
 
-    this._model = 22;
-    this._pin = pin.index + 2;
+    if (model == DHT_Model.DHT22 || model == DHT_Model.AM2302) {
+      if (pin.index > 25) {
+        throw new ArgumentError("Parameter (pin) must be one of the RPI_Pin.GPIOxx");
+      }
+      this._model = 22;
+      this._pin = pin.index + 2;
+      this._i2cAddress = 0;
+    } else if (model == DHT_Model.SHT3x) {
+      if (pin.index < 26) {
+        throw new ArgumentError("Parameter (pin) must be one of the RPI_Pin.I2Cx");
+      }
+      this._model = 30;
+      this._pin = pin == RPI_Pin.I2C0 ? 0 : 1;
+      this._i2cAddress = i2cAddress;
+    }
+    
     this._bufferSize = bufferSize;
   }
 
@@ -86,7 +101,7 @@ class DHT {
       }
     };
 
-    var args = [_model, _pin, receivePort.sendPort];
+    var args = [_model, _pin, _i2cAddress, receivePort.sendPort];
     _getDHTServicePort.send(args);
 
     return completer.future;
