@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.8
+- Implemented SHT3x sensor support
+
 ## 0.0.6
 
 - Implemented sampling history:
